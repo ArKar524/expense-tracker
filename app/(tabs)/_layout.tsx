@@ -22,14 +22,14 @@ export default function TabLayout() {
           title: 'Home',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
-      />
+      /> 
       <Tabs.Screen
-        name="explore"
+        name="setting"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Setting',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane" color={color} />,
         }}
-      />
+      /> 
     </Tabs>
   );
 }
