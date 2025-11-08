@@ -1,66 +1,218 @@
-
 import Container from '@/components/container';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
-import { StyleSheet, TextInput, useColorScheme } from 'react-native';
+import useExpenseStore from '@/store/useExpenseStore';
+import { useMemo, useState } from 'react';
+import { FlatList, StyleSheet, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 
 export default function HomeScreen() {
-    const theme = useColorScheme() ?? 'light';
+  const theme = useColorScheme() ?? 'light';
   const color = Colors[theme];
+
+  const [type, setType] = useState<'income' | 'expense'>('expense');
+  const [text, setText] = useState<string>('');
+
+  const expenseStore = useExpenseStore((state) => state.expenseData);
+  const addExpense = useExpenseStore((state) => state.addExpense);
+
+  const handleTypeChange = (newType: 'income' | 'expense') => setType(newType);
+
+  const handleAddExpense = () => {
+    if (!text.trim()) return;
+
+    const parts = text.trim().split(' ');
+    const amount = parseFloat(parts[0]);
+    if (isNaN(amount)) {
+      alert('Invalid amount!');
+      return;
+    }
+    const description = parts.slice(1).join(' ') || '';
+
+    const newExpense = {
+      id: Math.random().toString(36).substring(2, 15),
+      type,
+      amount,
+      description,
+      date: new Date(),
+    };
+
+    addExpense(newExpense);
+    setText('');
+  };
+
+  // Compute totals dynamically using useMemo
+  const { totalIncome, totalExpense, balance } = useMemo(() => {
+    const income = expenseStore
+      .filter((e) => e.type === 'income')
+      .reduce((sum, e) => sum + e.amount, 0);
+    const expense = expenseStore
+      .filter((e) => e.type === 'expense')
+      .reduce((sum, e) => sum + e.amount, 0);
+    return {
+      totalIncome: income,
+      totalExpense: expense,
+      balance: income - expense,
+    };
+  }, [expenseStore]);
+
+  const placeholder =
+    type === 'expense' ? 'Quick add expense ...' : 'Quick add income ...';
+
+  const renderItem = ({ item }: { item: typeof expenseStore[0] }) => {
+    const date = new Date(item.date);
+    const formattedDate = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    return (
+      <TouchableOpacity style={styles.row}   activeOpacity={0.5}>
+        <View>
+          <ThemedText ellipsizeMode="tail" numberOfLines={1}>{item.description || 'No description'}</ThemedText>
+          <ThemedText style={{ fontSize: 13, fontWeight: "600" , color: '#888' }}>
+            {formattedDate}
+          </ThemedText>
+        </View>
+        <ThemedText
+          style={{ color: item.type === 'expense' ? 'red' : 'green' }}
+        >
+          ${item.amount.toFixed(2)}
+        </ThemedText>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <Container>
-      <ThemedText type='title' numberOfLines={1}>
-           Dot Balance
+      <ThemedText type="title" numberOfLines={1}>
+        Dot Balance
       </ThemedText>
 
+      {/* Dynamic Balance Card */}
       <ThemedView style={styles.card}>
-        <ThemedView>
-          <ThemedText>
-            CURRENT BALANCE
-          </ThemedText>
-        </ThemedView>
-        <ThemedView style={{paddingVertical: 5}}>
-          <ThemedText type="subtitle">
-            $ -10000.0
-          </ThemedText>
-        </ThemedView>
+        <ThemedText>CURRENT BALANCE</ThemedText>
+        <ThemedText type="subtitle" style={{ paddingVertical: 5 }}>
+          ${balance.toFixed(2)}
+        </ThemedText>
 
-        <ThemedView style={{ flexDirection: "row",justifyContent: "space-between"}}>
-          <ThemedView>
-            <ThemedText>
-              Income
+        <ThemedView style={styles.row}>
+          <View>
+            <ThemedText>Income</ThemedText>
+            <ThemedText style={{ color: 'green' }}>
+              ${totalIncome.toFixed(2)}
             </ThemedText>
-            <ThemedText style={{color: "green"}}>
-              $0.000
+          </View>
+          <View>
+            <ThemedText>Expenses</ThemedText>
+            <ThemedText style={{ color: 'red' }}>
+              ${totalExpense.toFixed(2)}
             </ThemedText>
-          </ThemedView>
-          <ThemedView>
-            <ThemedText>
-              Expenses
-            </ThemedText>
-            <ThemedText style={{color: "red"}}>
-              $0.000
-            </ThemedText>
-          </ThemedView> 
-        </ThemedView> 
+          </View>
+        </ThemedView>
       </ThemedView>
 
-      <ThemedView style={{ borderRadius: 50, paddingHorizontal: 30 }} >
-        <IconSymbol name='chevron.up' color={'red'} style={{ position: "absolute", top: 8,left: 8}} />
-        <TextInput style={{ borderRadius: 10 }} placeholder='Quick add expense ....' placeholderTextColor={color.text} />
-        <IconSymbol name='paperplane.fill' color={ color.text} size={18} style={{ position: "absolute", top: 10,right: 8}} />
+      {/* Input Section */}
+      <ThemedView
+        style={[
+          styles.inputContainer,
+          { backgroundColor: color.background, overflow: 'hidden', borderRadius: 100 },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() =>
+            handleTypeChange(type === 'expense' ? 'income' : 'expense')
+          }
+          style={styles.toggleButton}
+        >
+          <IconSymbol
+            name={type === 'expense' ? 'chevron.up' : 'chevron.down'}
+            color={type === 'expense' ? 'red' : 'green'}
+          />
+        </TouchableOpacity>
+
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          style={[styles.textInput, { color: color.text }]}
+          placeholder={placeholder}
+          placeholderTextColor={color.text}
+        />
+
+        <TouchableOpacity style={styles.sendButton} onPress={handleAddExpense}>
+          <IconSymbol name="paperplane.fill" color={color.text} size={18} />
+        </TouchableOpacity>
+      </ThemedView>
+
+      {/* Transaction List */}
+      <ThemedView style={{ backgroundColor: 'transparent', flex: 1 }}>
+
+        <FlatList
+          ListHeaderComponent={() => (
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                paddingBottom: 5,
+              }}
+            >
+              <ThemedText type="subtitle">Recent Transactions</ThemedText>
+              <ThemedText type="default">View all</ThemedText>
+            </View>
+          )}
+          data={expenseStore.slice().reverse().slice(0, 10)}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ListEmptyComponent={
+            <ThemedText style={{ paddingVertical: 10 }}>
+              No transactions yet
+            </ThemedText>
+          }
+          ItemSeparatorComponent={() => (
+            <ThemedView
+              style={{
+                borderWidth: 1,
+                borderStyle: 'dashed',
+                borderColor: color.text,
+              }}
+            />
+          )}
+        />
       </ThemedView>
     </Container>
   );
-} 
+}
 
 const styles = StyleSheet.create({
   card: {
     paddingVertical: 15,
     paddingHorizontal: 10,
     borderRadius: 10,
-    marginVertical: 15
-  }
-})
+    marginVertical: 15,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+  },
+  inputContainer: {
+    borderRadius: 50,
+    marginVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  toggleButton: {
+    padding: 10,
+  },
+  textInput: {
+    flex: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  sendButton: {
+    padding: 10,
+  },
+});
