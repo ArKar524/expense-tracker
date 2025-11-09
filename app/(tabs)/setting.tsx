@@ -26,7 +26,7 @@ export default function SettingsScreen() {
     }, [])
   );
   return (
-    <Container style={{ gap: 16, padding: 16 }}>
+    <Container>
       {/* Header */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <ThemedText type="title" style={{ fontSize: 26, lineHeight: 28 }}>

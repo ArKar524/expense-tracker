@@ -90,7 +90,7 @@ export default function HomeScreen() {
 
   return (
     <Container style={{ gap: 16, padding: 16 }}>
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, }}>
       <ThemedText type="title" style={{ fontSize: 26, lineHeight: 28 }} numberOfLines={1}>Dot Balance</ThemedText>
       <TouchableOpacity onPress={() => router.push('/setting')}>
         <Ionicons name="settings-outline" size={26} color={color.text} />
@@ -152,20 +152,21 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </ThemedView>
 
-      {/* Transaction List */}
-      <ThemedView style={{ backgroundColor: 'transparent', flex: 1 }}>
-
+      {/* Transaction List */}  
         <FlatList
           ListHeaderComponent={() => (
             <ThemedView
               style={{
                 flexDirection: 'row',
                 justifyContent: 'space-between',
-                paddingBottom: 5,
+              paddingBottom: 5,
+                alignItems: 'center',
               }}
             >
-              <ThemedText type="subtitle">Recent Transactions</ThemedText>
-              <ThemedText type="default">View all</ThemedText>
+            <ThemedText type="subtitle">Recent Transactions</ThemedText>
+            <TouchableOpacity onPress={() => router.push('/transaction')}>
+              <ThemedText type="default" style={{textDecorationLine: "underline"}}>View all</ThemedText> 
+            </TouchableOpacity>
             </ThemedView>
           )}
           data={expenseStore.slice().reverse().slice(0, 10)}
@@ -187,8 +188,7 @@ export default function HomeScreen() {
           )}
            contentContainerStyle={[styles.card,{backgroundColor: color.background}]}
         />
-      </ThemedView>
-    </Container>
+     </Container>
   );
 }
 
