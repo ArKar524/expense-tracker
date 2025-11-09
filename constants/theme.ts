@@ -16,6 +16,21 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    button: {
+      backgroundColor: '#687076',
+      textColor: '#fff',
+      borderColor: '#687076',
+    }, 
+    input: {
+      background: '#fff',
+      text: '#000',
+      placeholder: '#687076',
+    },
+    card: {
+      background: '#fff',
+      text: '#11181C',
+      border: '#E4E6E8',
+    } 
   },
   dark: {
     text: '#ECEDEE',
@@ -24,8 +39,23 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    button: {
+      backgroundColor : '#9BA1A6',
+      textColor: '#fff',
+      borderColor: '#9BA1A6',
+    },
+    input: {
+      background: '#202325',
+      text: '#ECEDEE',
+      placeholder: '#9BA1A6',
+    },
+    card: {
+      background: '#202325',
+      text: '#ECEDEE',
+      border: '#2C2F33',
+    }, 
   },
-};
+}; 
 
 export const Fonts = Platform.select({
   ios: {

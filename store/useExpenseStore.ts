@@ -17,7 +17,10 @@ interface ExpenseStore {
   addExpense: (expense: Expense) => void;
   removeExpense: (id: string) => void;
   updateExpense: (updatedExpense: Expense) => void;
+  getStorageSize: () => Promise<string>; // function to get the current persisted storage size
+  clearStorage: () => Promise<void>;
 }
+const STORAGE_KEY = "expense-storage";
 
 const useExpenseStore = create<ExpenseStore>()(
   persist(
@@ -35,9 +38,24 @@ const useExpenseStore = create<ExpenseStore>()(
             expense.id === updatedExpense.id ? updatedExpense : expense
           ),
         })),
+      
+       // function to get the current persisted storage size
+       getStorageSize: async () => {
+        const data = await AsyncStorage.getItem(STORAGE_KEY);
+        if (!data) return "0 KB";
+
+        const bytes = new Blob([data]).size;
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+      },  
+      clearStorage: async () => {
+        await AsyncStorage.removeItem(STORAGE_KEY);
+        set({ expenseData: [] });
+      },
     }),
     {
-      name: "expense-storage",
+      name: STORAGE_KEY,
       storage: createJSONStorage(() => AsyncStorage),
     }
   )
