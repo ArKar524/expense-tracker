@@ -6,10 +6,13 @@ import { Colors } from '@/constants/theme';
 import useExpenseStore from '@/store/useExpenseStore';
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function HomeScreen() {
   const theme = useColorScheme() ?? 'light';
   const color = Colors[theme];
+  const router = useRouter();
 
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [text, setText] = useState<string>('');
@@ -87,9 +90,12 @@ export default function HomeScreen() {
 
   return (
     <Container>
-      <ThemedText type="title" numberOfLines={1}>
-        Dot Balance
-      </ThemedText>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <ThemedText type="title" style={{ fontSize: 26, lineHeight: 28 }}>Dot Balance</ThemedText>
+      <TouchableOpacity onPress={() => router.push('/setting')}>
+        <Ionicons name="settings-outline" size={26} color="#000" />
+      </TouchableOpacity>
+    </View>
 
       {/* Dynamic Balance Card */}
       <ThemedView style={styles.card}>
