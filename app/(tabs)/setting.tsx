@@ -1,27 +1,46 @@
-import { View, TouchableOpacity, Image } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
 import Container from '@/components/container';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Colors } from '@/constants/theme';
+import useExpenseStore from '@/store/useExpenseStore';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Image, TouchableOpacity, useColorScheme, View } from 'react-native';
 
 export default function SettingsScreen() {
   const [isLoginned, setIsLoginned] = useState(false);
+  const [size, setSize] = useState('');
   const router = useRouter();
+  const theme = useColorScheme() ?? 'light';
+  const color = Colors[theme];
+  const clearStorage = useExpenseStore((state) => state.clearStorage);
+
+  const loadStorageSize = async () => {
+    const s = await useExpenseStore.getState().getStorageSize();
+     setSize(s);
+  }; 
+  useFocusEffect(
+    useCallback(() => {
+       loadStorageSize();
+    }, [])
+  );
   return (
     <Container style={{ gap: 16, padding: 16 }}>
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-      <ThemedText type="title" style={{ fontSize: 26, lineHeight: 28 }}>Settings</ThemedText>
-      <TouchableOpacity onPress={() => router.push('/')}>
-        <Ionicons name="home-outline" size={26} color="#000" />
-      </TouchableOpacity>
-    </View>
+      {/* Header */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <ThemedText type="title" style={{ fontSize: 26, lineHeight: 28 }}>
+          Settings
+        </ThemedText>
+        <TouchableOpacity onPress={() => router.push('/')}>
+          <Ionicons name="home-outline" size={26} color={color.text} />
+        </TouchableOpacity>
+      </View>
 
-
+      {/* Account Section */}
       {isLoginned ? (
-        <View
+        <ThemedView
           style={{
-            backgroundColor: '#fff',
             borderRadius: 16,
             padding: 16,
             shadowColor: '#000',
@@ -31,36 +50,35 @@ export default function SettingsScreen() {
             marginBottom: 16,
           }}
         >
-          <ThemedText style={{ color: '#666', marginBottom: 8, fontSize: 13 }}>ACCOUNT</ThemedText>
+          <ThemedText>ACCOUNT</ThemedText>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <ThemedView style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Image
               source={{ uri: 'https://ui-avatars.com/api/?name=Paing+Soe+Ko' }}
               style={{ width: 48, height: 48, borderRadius: 24 }}
             />
             <View style={{ flex: 1 }}>
-              <ThemedText type="subtitle" style={{ color: '#000' }}>
-                Paing Soe Ko
-              </ThemedText>
-              <ThemedText style={{ color: '#666' }}>kopaing1</ThemedText>
+              <ThemedText type="subtitle">Paing Soe Ko</ThemedText>
+              <ThemedText type="secondary">kopaing1</ThemedText>
             </View>
             <TouchableOpacity
               onPress={() => setIsLoginned(false)}
-              style={{
-                backgroundColor: '#e5e7eb',
-                borderRadius: 8,
-                paddingHorizontal: 14,
-                paddingVertical: 6,
-              }}
+              style={[
+                color.button,
+                {
+                  borderRadius: 8,
+                  paddingHorizontal: 14,
+                  paddingVertical: 6,
+                },
+              ]}
             >
-              <ThemedText style={{ color: '#000' }}>Switch</ThemedText>
+              <ThemedText style={{ color: color.button.textColor }}>Switch</ThemedText>
             </TouchableOpacity>
-          </View>
-        </View>
+          </ThemedView>
+        </ThemedView>
       ) : (
-        <View
+        <ThemedView
           style={{
-            backgroundColor: '#fff',
             borderRadius: 16,
             padding: 16,
             shadowColor: '#000',
@@ -70,33 +88,36 @@ export default function SettingsScreen() {
             marginBottom: 16,
           }}
         >
-          <ThemedText style={{ color: '#666', marginBottom: 8, fontSize: 13 }}>ACCOUNT</ThemedText>
+          <ThemedText style={{ marginBottom: 8 }}>ACCOUNT</ThemedText>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <ThemedView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flex: 1 }}>
-              <ThemedText style={{ color: '#000', fontWeight: '600' }}>Login to Save Data</ThemedText>
-              <ThemedText style={{ color: '#777', fontSize: 12 }}>Sync your data to the cloud</ThemedText>
+              <ThemedText style={{ fontWeight: '600' }}>Login to Save Data</ThemedText>
+              <ThemedText style={{ fontSize: 12 }}>Sync your data to the cloud</ThemedText>
             </View>
 
             <TouchableOpacity
               onPress={() => setIsLoginned(true)}
-              style={{
-                backgroundColor: '#131417ff',
-                borderRadius: 8,
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-              }}
+              style={[
+                color.button,
+                {
+                  borderWidth: 1,
+                  alignItems: 'center',
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                },
+              ]}
             >
-              <ThemedText style={{ color: '#fff' }}>Login</ThemedText>
+              <ThemedText style={{ color: color.button.textColor }}>Login</ThemedText>
             </TouchableOpacity>
-          </View>
-        </View>
+          </ThemedView>
+        </ThemedView>
       )}
 
-
-      <View
+      {/* App Section */}
+      <ThemedView
         style={{
-          backgroundColor: '#fff',
           borderRadius: 16,
           padding: 16,
           shadowColor: '#000',
@@ -106,62 +127,79 @@ export default function SettingsScreen() {
           marginBottom: 16,
         }}
       >
-        <ThemedText style={{ color: '#666', marginBottom: 8, fontSize: 13 }}>APP</ThemedText>
+        <ThemedText style={{ marginBottom: 8, fontSize: 13 }}>APP</ThemedText>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-          <Ionicons name="download-outline" size={26} color="#333" />
+          <Ionicons name="download-outline" size={26} color={color.icon} />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <ThemedText style={{ color: '#000' }}>Install App</ThemedText>
-            <ThemedText style={{ color: '#777', fontSize: 12 }}>Get the full experience</ThemedText>
+            <ThemedText>Install App</ThemedText>
+            <ThemedText type="secondary" style={{ fontSize: 12 }}>
+              Get the full experience
+            </ThemedText>
           </View>
           <TouchableOpacity
-            style={{
-              backgroundColor: '#131417ff',
-              borderRadius: 8,
-              paddingHorizontal: 14,
-              paddingVertical: 6,
-            }}
+            style={[
+              color.button,
+              {
+                borderRadius: 8,
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+              },
+            ]}
           >
-            <ThemedText style={{ color: '#fff' }}>Install</ThemedText>
+            <ThemedText style={{ color: color.button.textColor }}>Install</ThemedText>
           </TouchableOpacity>
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-          <Ionicons name="folder-outline" size={26} color="#333" />
+          <Ionicons name="folder-outline" size={26} color={color.icon} />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <ThemedText style={{ color: '#000' }}>Storage</ThemedText>
-            <ThemedText style={{ color: '#777', fontSize: 12 }}>Local data: 276 bytes</ThemedText>
+            <ThemedText>Storage</ThemedText>
+            <ThemedText type="secondary" style={{ fontSize: 12 }}>
+              Local data: {size}
+            </ThemedText>
           </View>
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="cloud-outline" size={26} color="#333" />
+          <Ionicons name="cloud-outline" size={26} color={color.icon} />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <ThemedText style={{ color: '#000' }}>Cache Data</ThemedText>
-            <ThemedText style={{ color: '#777', fontSize: 12 }}>Cache app data for offline mode</ThemedText>
+            <ThemedText>Cache Data</ThemedText>
+            <ThemedText type="secondary" style={{ fontSize: 12 }}>
+              Cache app data for offline mode
+            </ThemedText>
           </View>
           <TouchableOpacity
-            style={{
-              backgroundColor: '#e5e7eb',
-              borderRadius: 8,
-              paddingHorizontal: 14,
-              paddingVertical: 6,
+            onPress={async () => {
+              await clearStorage();
+              await loadStorageSize();
             }}
+            style={[
+              color.button,
+              {
+                borderRadius: 8,
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+              },
+            ]}
           >
-            <ThemedText style={{ color: '#000' }}>Clear</ThemedText>
+            <ThemedText style={{ color: color.button.textColor }}>Clear</ThemedText>
           </TouchableOpacity>
         </View>
 
         <View style={{ marginTop: 12 }}>
-          <ThemedText style={{ color: '#999', fontSize: 12 }}>App Version 1.0.0</ThemedText>
-          <ThemedText style={{ color: '#999', fontSize: 12 }}>Build Number 100</ThemedText>
+          <ThemedText type="secondary" style={{ fontSize: 12 }}>
+            App Version 1.0.0
+          </ThemedText>
+          <ThemedText type="secondary" style={{ fontSize: 12 }}>
+            Build Number 100
+          </ThemedText>
         </View>
-      </View>
+      </ThemedView>
 
       {/* Danger Zone */}
-      <View
+      <ThemedView
         style={{
-          backgroundColor: '#fff',
           borderRadius: 16,
           padding: 16,
           shadowColor: '#000',
@@ -171,7 +209,9 @@ export default function SettingsScreen() {
           marginBottom: 16,
         }}
       >
-        <ThemedText style={{ color: '#666', marginBottom: 8, fontSize: 13 }}>DANGER ZONE</ThemedText>
+        <ThemedText type="subtitle" style={{ marginBottom: 8, fontSize: 13 }}>
+          DANGER ZONE
+        </ThemedText>
 
         {isLoginned ? (
           <TouchableOpacity
@@ -187,6 +227,10 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
+            onPress={async () => {
+              await clearStorage();
+              await loadStorageSize();
+            }}
             style={{
               backgroundColor: '#b91c1c',
               borderRadius: 8,
@@ -197,7 +241,7 @@ export default function SettingsScreen() {
             <ThemedText style={{ color: '#fff' }}>Delete Local Data</ThemedText>
           </TouchableOpacity>
         )}
-      </View>
+      </ThemedView>
     </Container>
   );
 }

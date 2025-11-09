@@ -4,10 +4,10 @@ import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import useExpenseStore from '@/store/useExpenseStore';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function HomeScreen() {
   const theme = useColorScheme() ?? 'light';
@@ -73,12 +73,12 @@ export default function HomeScreen() {
 
     return (
       <TouchableOpacity style={styles.row}   activeOpacity={0.5}>
-        <View>
+        <ThemedView>
           <ThemedText ellipsizeMode="tail" numberOfLines={1}>{item.description || 'No description'}</ThemedText>
           <ThemedText style={{ fontSize: 13, fontWeight: "600" , color: '#888' }}>
             {formattedDate}
           </ThemedText>
-        </View>
+        </ThemedView>
         <ThemedText
           style={{ color: item.type === 'expense' ? 'red' : 'green' }}
         >
@@ -89,11 +89,11 @@ export default function HomeScreen() {
   };
 
   return (
-    <Container>
+    <Container style={{ gap: 16, padding: 16 }}>
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-      <ThemedText type="title" style={{ fontSize: 26, lineHeight: 28 }}>Dot Balance</ThemedText>
+      <ThemedText type="title" style={{ fontSize: 26, lineHeight: 28 }} numberOfLines={1}>Dot Balance</ThemedText>
       <TouchableOpacity onPress={() => router.push('/setting')}>
-        <Ionicons name="settings-outline" size={26} color="#000" />
+        <Ionicons name="settings-outline" size={26} color={color.text} />
       </TouchableOpacity>
     </View>
 
@@ -157,7 +157,7 @@ export default function HomeScreen() {
 
         <FlatList
           ListHeaderComponent={() => (
-            <View
+            <ThemedView
               style={{
                 flexDirection: 'row',
                 justifyContent: 'space-between',
@@ -166,7 +166,7 @@ export default function HomeScreen() {
             >
               <ThemedText type="subtitle">Recent Transactions</ThemedText>
               <ThemedText type="default">View all</ThemedText>
-            </View>
+            </ThemedView>
           )}
           data={expenseStore.slice().reverse().slice(0, 10)}
           keyExtractor={(item) => item.id}
@@ -185,6 +185,7 @@ export default function HomeScreen() {
               }}
             />
           )}
+           contentContainerStyle={[styles.card,{backgroundColor: color.background}]}
         />
       </ThemedView>
     </Container>
@@ -193,11 +194,14 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   card: {
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    marginVertical: 15,
-  },
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    marginBottom: 16,
+   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
