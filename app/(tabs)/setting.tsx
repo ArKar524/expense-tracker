@@ -5,8 +5,9 @@ import { Colors } from '@/constants/theme';
 import useExpenseStore from '@/store/useExpenseStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { useCallback, useState } from 'react';
-import { Image, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, TouchableOpacity, useColorScheme, View } from 'react-native';
 
 export default function SettingsScreen() {
   const [isLoginned, setIsLoginned] = useState(false);
@@ -18,13 +19,79 @@ export default function SettingsScreen() {
 
   const loadStorageSize = async () => {
     const s = await useExpenseStore.getState().getStorageSize();
-     setSize(s);
-  }; 
+    setSize(s);
+  };
   useFocusEffect(
     useCallback(() => {
-       loadStorageSize();
+      loadStorageSize();
     }, [])
   );
+
+  // OTA update states
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [downloadingUpdate, setDownloadingUpdate] = useState(false);
+  const [updateManifest, setUpdateManifest] = useState<any>(null);
+
+  const checkForUpdates = async () => {
+    try {
+      const res = await Updates.checkForUpdateAsync();
+      setUpdateAvailable(res.isAvailable ?? false);
+      setUpdateManifest(res.isAvailable ? res.manifest : null);
+      if (res.isAvailable) {
+        Alert.alert('Update available', 'A new update is available. You can download it now.');
+      } else {
+        Alert.alert('Up to date', 'No updates are available.');
+      }
+    } catch (error) {
+      console.warn(error);
+      Alert.alert('Error', 'Failed to check for updates');
+    }
+  };
+
+  // renamed and refactored from downloadUpdate -> applyUpdate
+  const applyUpdate = async () => {
+    try {
+      // if we don't already know an update is available, check first
+      if (!updateAvailable) {
+        await checkForUpdates();
+        if (!useExpenseStore.getState() && !updateAvailable) {
+          // defensive: if still not available, inform and return
+          Alert.alert('No update', 'No update available to download');
+          return;
+        }
+        if (!updateAvailable) return; // nothing to do
+      }
+
+      setDownloadingUpdate(true);
+      await Updates.fetchUpdateAsync();
+
+      // reset local flags and store manifest
+      setUpdateAvailable(false);
+      setUpdateManifest(null);
+
+      // let user decide when to restart
+      Alert.alert('Update downloaded', 'The update is downloaded. Restart now to apply it.', [
+        {
+          text: 'Restart now',
+          onPress: async () => {
+            try {
+              await Updates.reloadAsync();
+            } catch (err) {
+              console.warn(err);
+              Alert.alert('Error', 'Failed to restart app to apply update.');
+            }
+          },
+        },
+        { text: 'Later', style: 'cancel' },
+      ]);
+    } catch (error) {
+      console.warn(error);
+      Alert.alert('Error', 'Failed to download or apply update');
+    } finally {
+      setDownloadingUpdate(false);
+    }
+  };
+
   return (
     <Container>
       {/* Header */}
@@ -132,23 +199,34 @@ export default function SettingsScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
           <Ionicons name="download-outline" size={26} color={color.icon} />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <ThemedText>Install App</ThemedText>
+            <ThemedText>Check for update</ThemedText>
             <ThemedText type="secondary" style={{ fontSize: 12 }}>
-              Get the full experience
+              {updateAvailable ? 'Update available' : 'Check for updates to get the latest build'}
             </ThemedText>
           </View>
           <TouchableOpacity
+            onPress={() => {
+              applyUpdate();
+            }}
             style={[
               color.button,
-              {
-                borderRadius: 8,
-                paddingHorizontal: 14,
-                paddingVertical: 6,
-              },
+              { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
             ]}
+            disabled={downloadingUpdate}
           >
-            <ThemedText style={{ color: color.button.textColor }}>Install</ThemedText>
+            {downloadingUpdate ? (
+              <ActivityIndicator color={color.button.textColor} />
+            ) : (
+              <ThemedText style={{ color: color.button.textColor }}>{updateAvailable ? 'Apply' : 'Check & Apply'}</ThemedText>
+            )}
           </TouchableOpacity>
+
+          {/* show manifest/build info when available */}
+          {updateManifest ? (
+            <ThemedText type="secondary" style={{ fontSize: 12, marginTop: 8 }}>
+              New build: {String(updateManifest?.revisionId ?? updateManifest?.id ?? 'unknown')}
+            </ThemedText>
+          ) : null}
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
