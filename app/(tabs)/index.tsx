@@ -165,7 +165,7 @@ export default function HomeScreen() {
             >
             <ThemedText type="subtitle">Recent Transactions</ThemedText>
             <TouchableOpacity onPress={() => router.push('/transaction')}>
-              <ThemedText type="default" style={{textDecorationLine: "underline"}}>View all</ThemedText> 
+              <ThemedText type="default" style={{textDecorationLine: "underline"}}>View all fdfa</ThemedText> 
             </TouchableOpacity>
             </ThemedView>
           )}

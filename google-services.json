@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "944144806007",
+    "project_id": "dot-balance-ccb41",
+    "storage_bucket": "dot-balance-ccb41.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:944144806007:android:7399d29a3c401779fed672",
+        "android_client_info": {
+          "package_name": "com.arkarmoe.expensetracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "944144806007-2od9b1erf1gduji75qu9v05ka4il4pan.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.arkarmoe.expensetracker",
+            "certificate_hash": "9d2bda757768446e4df5b1f09e44510f9667000f"
+          }
+        },
+        {
+          "client_id": "944144806007-oasli2qds558c611h59ibenrc3t3sam4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5Pj8WWwIycfv1Z6otbUqMjCvZWsKNIKI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "944144806007-ifh8i06941db0mtfrln7d3tstgla74pf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
