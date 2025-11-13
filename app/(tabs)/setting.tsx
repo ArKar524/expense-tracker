@@ -1,47 +1,41 @@
-import { Ionicons } from '@expo/vector-icons';
-import {
-  GoogleSignin,
-  GoogleSigninButton,
-  isErrorWithCode,
-  isSuccessResponse,
-  statusCodes
-} from '@react-native-google-signin/google-signin';
-import { useFocusEffect, useRouter } from 'expo-router';
-import * as Updates from 'expo-updates';
-import React, { useCallback, useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
+import * as Updates from "expo-updates";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
+  TextInput,
   TouchableOpacity,
   useColorScheme,
   View,
-} from 'react-native';
+} from "react-native";
 
-import Container from '@/components/container';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
-import useExpenseStore from '@/store/useExpenseStore';
-
-// Configure Google Signin once (outside component)
-GoogleSignin.configure({
-  webClientId:
-    '944144806007-2od9b1erf1gduji75qu9v05ka4il4pan.apps.googleusercontent.com',
-  scopes: ['https://www.googleapis.com/auth/drive.readonly',],
-  offlineAccess: false,
-});
+import Container from "@/components/container";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { Colors } from "@/constants/theme";
+import { auth } from "@/firebaseConfig";
+import useExpenseStore from "@/store/useExpenseStore";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  User,
+} from "firebase/auth";
 
 export default function SettingsScreen() {
-  const [userInfo, setUserInfo] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
-  const [size, setSize] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [size, setSize] = useState("");
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [downloadingUpdate, setDownloadingUpdate] = useState(false);
-  const [updateManifest, setUpdateManifest] = useState<any>(null);
-
   const router = useRouter();
-  const theme = useColorScheme() ?? 'light';
+  const theme = useColorScheme() ?? "light";
   const color = Colors[theme];
   const clearStorage = useExpenseStore((state) => state.clearStorage);
 
@@ -57,47 +51,47 @@ export default function SettingsScreen() {
     }, [])
   );
 
-  /** ─── GOOGLE SIGN-IN ───────────────────────────────────────────── */
-  const signIn = async () => {
+  /** ─── AUTH STATE ───────────────────────────────────────────────── */
+  React.useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    return unsub;
+  }, []);
+
+  /** ─── EMAIL/PASSWORD AUTH ─────────────────────────────────────── */
+  const handleRegister = async () => {
     try {
       setLoading(true);
-      await GoogleSignin.hasPlayServices();
-      const response = await GoogleSignin.signIn();
-
-      if (isSuccessResponse(response)) {
-        setUserInfo(response.data);
-        console.log('Google User:', response.data);
-      } else {
-        console.log('Sign-in cancelled or failed:', response);
-      }
-    } catch (error) {
-      console.log(' Sign-in Error:', error);
-      if (isErrorWithCode(error)) {
-        switch (error.code) {
-          case statusCodes.IN_PROGRESS:
-            Alert.alert('Please wait', 'Sign-in already in progress.');
-            break;
-          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            Alert.alert('Error', 'Play Services not available or outdated.');
-            break;
-          default:
-            Alert.alert('Error', 'Something went wrong.');
-        }
-      } else {
-        Alert.alert('Error', 'An unexpected error occurred.');
-      }
+      await createUserWithEmailAndPassword(auth, email, password);
+      Alert.alert("Account created", "You are now logged in!");
+      setEmail("");
+      setPassword("");
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const signOut = async () => {
+  const handleLogin = async () => {
     try {
-      await GoogleSignin.signOut();
-      setUserInfo(null);
-      Alert.alert('Signed out', 'You have successfully logged out.');
-    } catch (error) {
-      console.log('Sign-out Error:', error);
+      setLoading(true);
+      await signInWithEmailAndPassword(auth, email, password);
+      Alert.alert("Welcome back!", "Login successful.");
+      setEmail("");
+      setPassword("");
+    } catch (e: any) {
+      Alert.alert("Login failed", e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      Alert.alert("Signed out", "You have been logged out.");
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
     }
   };
 
@@ -106,17 +100,15 @@ export default function SettingsScreen() {
     try {
       const res = await Updates.checkForUpdateAsync();
       setUpdateAvailable(res.isAvailable ?? false);
-      setUpdateManifest(res.isAvailable ? res.manifest : null);
-
       Alert.alert(
-        res.isAvailable ? 'Update available' : 'Up to date',
+        res.isAvailable ? "Update available" : "Up to date",
         res.isAvailable
-          ? 'A new update is available. You can download it now.'
-          : 'No updates are available.'
+          ? "A new update is available."
+          : "No updates are available."
       );
     } catch (error) {
       console.warn(error);
-      Alert.alert('Error', 'Failed to check for updates.');
+      Alert.alert("Error", "Failed to check for updates.");
     }
   };
 
@@ -128,14 +120,13 @@ export default function SettingsScreen() {
       }
       setDownloadingUpdate(true);
       await Updates.fetchUpdateAsync();
-
-      Alert.alert('Update ready', 'Restart to apply it?', [
-        { text: 'Restart', onPress: async () => await Updates.reloadAsync() },
-        { text: 'Later', style: 'cancel' },
+      Alert.alert("Update ready", "Restart to apply it?", [
+        { text: "Restart", onPress: async () => await Updates.reloadAsync() },
+        { text: "Later", style: "cancel" },
       ]);
     } catch (error) {
       console.warn(error);
-      Alert.alert('Error', 'Failed to download or apply update.');
+      Alert.alert("Error", "Failed to download or apply update.");
     } finally {
       setDownloadingUpdate(false);
     }
@@ -147,28 +138,28 @@ export default function SettingsScreen() {
       {/* Header */}
       <View
         style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
           marginBottom: 16,
         }}
       >
         <ThemedText type="title" style={{ fontSize: 26 }}>
           Settings
         </ThemedText>
-        <TouchableOpacity onPress={() => router.push('/')}>
+        <TouchableOpacity onPress={() => router.push("/")}>
           <Ionicons name="home-outline" size={26} color={color.text} />
         </TouchableOpacity>
       </View>
 
       {/* Account Section */}
-      {userInfo ? (
+      {user ? (
         <ThemedView
           style={{
             borderRadius: 16,
             padding: 16,
             marginBottom: 16,
-            shadowColor: '#000',
+            shadowColor: "#000",
             shadowOpacity: 0.1,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 2 },
@@ -176,24 +167,20 @@ export default function SettingsScreen() {
         >
           <ThemedText>ACCOUNT</ThemedText>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             <Image
-              source={{ uri: userInfo?.user?.photo }}
+              source={{ uri: "https://www.gravatar.com/avatar?d=mp&s=100" }}
               style={{ width: 48, height: 48, borderRadius: 24 }}
             />
             <View style={{ flex: 1 }}>
-              <ThemedText type="subtitle">{userInfo?.user?.name}</ThemedText>
-              <ThemedText type="secondary">{userInfo?.user?.email}</ThemedText>
+              <ThemedText type="subtitle">{user.email}</ThemedText>
+              <ThemedText type="secondary">Logged in</ThemedText>
             </View>
             <TouchableOpacity
-              onPress={signOut}
+              onPress={handleLogout}
               style={[
                 color.button,
-                {
-                  borderRadius: 8,
-                  paddingHorizontal: 14,
-                  paddingVertical: 6,
-                },
+                { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6 },
               ]}
             >
               <ThemedText style={{ color: color.button.textColor }}>
@@ -208,29 +195,84 @@ export default function SettingsScreen() {
             borderRadius: 16,
             padding: 16,
             marginBottom: 16,
-            shadowColor: '#000',
+            shadowColor: "#000",
             shadowOpacity: 0.1,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 2 },
           }}
         >
           <ThemedText style={{ marginBottom: 8 }}>ACCOUNT</ThemedText>
+          <ThemedText style={{ fontWeight: "600" }}>
+            Login or Register
+          </ThemedText>
+          <ThemedText type="secondary" style={{ fontSize: 12 }}>
+            Sync your data securely
+          </ThemedText>
 
-          <View
+          <TextInput
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              borderColor: color.border,
+              borderWidth: 1,
+              borderRadius: 8,
+              paddingHorizontal: 12,
+              marginTop: 10,
+              height: 40,
+              color: color.text,
             }}
-          >
-            <View style={{ flex: 1 }}>
-              <ThemedText style={{ fontWeight: '600' }}>
-                Login to Save Data
-              </ThemedText>
-              <ThemedText style={{ fontSize: 12 }}>
-                Sync your data to the cloud
-              </ThemedText>
-            </View> 
+          />
+          <TextInput
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            style={{
+              borderColor: color.border,
+              borderWidth: 1,
+              borderRadius: 8,
+              paddingHorizontal: 12,
+              marginTop: 10,
+              height: 40,
+              color: color.text,
+            }}
+          />
+          <View style={{ flexDirection: "row", marginTop: 10, gap: 10 }}>
+            <TouchableOpacity
+              onPress={handleLogin}
+              disabled={loading}
+              style={[
+                color.button,
+                { borderRadius: 8, flex: 1, alignItems: "center", padding: 10 },
+              ]}
+            >
+              {loading ? (
+                <ActivityIndicator color={color.button.textColor} />
+              ) : (
+                <ThemedText style={{ color: color.button.textColor }}>
+                  Login
+                </ThemedText>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleRegister}
+              disabled={loading}
+              style={[
+                color.button,
+                { borderRadius: 8, flex: 1, alignItems: "center", padding: 10 },
+              ]}
+            >
+              {loading ? (
+                <ActivityIndicator color={color.button.textColor} />
+              ) : (
+                <ThemedText style={{ color: color.button.textColor }}>
+                  Register
+                </ThemedText>
+              )}
+            </TouchableOpacity>
           </View>
         </ThemedView>
       )}
@@ -241,7 +283,7 @@ export default function SettingsScreen() {
           borderRadius: 16,
           padding: 16,
           marginBottom: 16,
-          shadowColor: '#000',
+          shadowColor: "#000",
           shadowOpacity: 0.1,
           shadowRadius: 8,
           shadowOffset: { width: 0, height: 2 },
@@ -251,15 +293,19 @@ export default function SettingsScreen() {
 
         {/* Update Check */}
         <View
-          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 16,
+          }}
         >
           <Ionicons name="download-outline" size={26} color={color.icon} />
           <View style={{ flex: 1, marginLeft: 12 }}>
             <ThemedText>Check for update</ThemedText>
             <ThemedText type="secondary" style={{ fontSize: 12 }}>
               {updateAvailable
-                ? 'Update available'
-                : 'Check for updates to get the latest build'}
+                ? "Update available"
+                : "Check for updates to get the latest build"}
             </ThemedText>
           </View>
           <TouchableOpacity
@@ -274,7 +320,7 @@ export default function SettingsScreen() {
               <ActivityIndicator color={color.button.textColor} />
             ) : (
               <ThemedText style={{ color: color.button.textColor }}>
-                {updateAvailable ? 'Apply' : 'Check'}
+                {updateAvailable ? "Apply" : "Check"}
               </ThemedText>
             )}
           </TouchableOpacity>
@@ -282,7 +328,11 @@ export default function SettingsScreen() {
 
         {/* Storage */}
         <View
-          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 16,
+          }}
         >
           <Ionicons name="folder-outline" size={26} color={color.icon} />
           <View style={{ flex: 1, marginLeft: 12 }}>
@@ -294,7 +344,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Clear Cache */}
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Ionicons name="cloud-outline" size={26} color={color.icon} />
           <View style={{ flex: 1, marginLeft: 12 }}>
             <ThemedText>Cache Data</ThemedText>
@@ -309,11 +359,7 @@ export default function SettingsScreen() {
             }}
             style={[
               color.button,
-              {
-                borderRadius: 8,
-                paddingHorizontal: 14,
-                paddingVertical: 6,
-              },
+              { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6 },
             ]}
           >
             <ThemedText style={{ color: color.button.textColor }}>
@@ -337,7 +383,7 @@ export default function SettingsScreen() {
         style={{
           borderRadius: 16,
           padding: 16,
-          shadowColor: '#000',
+          shadowColor: "#000",
           shadowOpacity: 0.1,
           shadowRadius: 8,
           shadowOffset: { width: 0, height: 2 },
@@ -353,20 +399,14 @@ export default function SettingsScreen() {
             await loadStorageSize();
           }}
           style={{
-            backgroundColor: '#b91c1c',
+            backgroundColor: "#b91c1c",
             borderRadius: 8,
-            alignItems: 'center',
+            alignItems: "center",
             paddingVertical: 10,
           }}
         >
-          <ThemedText style={{ color: '#fff' }}>Delete Local Data</ThemedText>
+          <ThemedText style={{ color: "#fff" }}>Delete Local Data</ThemedText>
         </TouchableOpacity>
-        <GoogleSigninButton
-              size={GoogleSigninButton.Size.Wide}
-              color={GoogleSigninButton.Color.Dark}
-              onPress={signIn}
-              disabled={loading}
-            />
       </ThemedView>
     </Container>
   );
