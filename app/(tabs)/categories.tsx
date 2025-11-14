@@ -1,11 +1,13 @@
 import Container from '@/components/container';
+import CustomHeader from '@/components/CustomHeader';
+import ItemSeparator from '@/components/ItemSeparator';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import useExpenseStore from '@/store/useExpenseStore';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Alert, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
+import { Alert, FlatList, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 
 export default function CategoriesScreen() {
   const theme = useColorScheme() ?? 'light';
@@ -63,7 +65,7 @@ export default function CategoriesScreen() {
       'Are you sure you want to delete this category?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => removeCategory(id) },
+        { text: 'Delete', style: 'destructive', onPress: () => { removeCategory(id); setShowAddModal(false); } },
       ]
     );
   };
@@ -74,91 +76,112 @@ export default function CategoriesScreen() {
     setShowAddModal(true);
   };
 
+  const categoryItemStyle = {
+    ...styles.categoryItem,
+  };
+
   return (
     <Container>
-      <ThemedView>
+      <CustomHeader title="Categories" />
+      <ThemedView style={{position:"relative",height:"95%",}}>
         <FlatList
+          scrollEnabled={true}
           data={categories}
-          keyExtractor={(item,index) => index.toString()}
+          keyExtractor={(item) => item.id.toString()}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <ThemedView style={styles.categoryItem}>
+            <TouchableOpacity onPress={() => handleEdit(item)} style={categoryItemStyle}>
               <ThemedView style={styles.categoryIcon}>
-                <Ionicons name="pricetag" size={20} color="#8b5cf6" />
+                <Ionicons name="pricetag" size={20} color={color.icon} />
               </ThemedView>
               <ThemedView style={styles.categoryInfo}>
                 <ThemedText style={styles.categoryName}>{item.name}</ThemedText>
                 {item.description && (
-                  <ThemedText style={styles.categoryDesc}>{item.description}</ThemedText>
+                  <ThemedText style={[styles.categoryDesc, {color: color.icon}]}>{item.description}</ThemedText>
                 )}
               </ThemedView>
-              <ThemedView style={styles.categoryActions}>
-                <TouchableOpacity onPress={() => handleEdit(item)} style={styles.editButton}>
-                  <Ionicons name="pencil" size={16} color="#6b7280" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
-                  <Ionicons name="trash" size={16} color="#ef4444" />
-                </TouchableOpacity>
-              </ThemedView>
-            </ThemedView>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <ThemedView style={styles.emptyState}>
               <Ionicons name="pricetag" size={48} color={color.icon} />
               <ThemedText style={styles.emptyText}>No categories yet</ThemedText>
-              <TouchableOpacity onPress={openAddModal} style={styles.addFirstButton}>
-                <ThemedText style={styles.addFirstText}>Add First Category</ThemedText>
+              <TouchableOpacity onPress={openAddModal} style={[styles.addFirstButton, { backgroundColor: color.button.backgroundColor }]}>
+                <ThemedText style={[styles.addFirstText, { color: color.button.textColor }]}>Add First Category</ThemedText>
               </TouchableOpacity>
             </ThemedView>
           }
           contentContainerStyle={styles.listContent}
+                    ItemSeparatorComponent={ItemSeparator}
+          
         />
 
         {/* Add/Edit Button */}
         {categories.length > 0 && (
-          <TouchableOpacity onPress={openAddModal} style={styles.addButton}>
-            <Ionicons name="add" size={24} color="#ffffff" />
+          <TouchableOpacity onPress={openAddModal} style={[styles.addButton, { backgroundColor: color.button.backgroundColor }]}>
+            <Ionicons name="add" size={24} color={color.button.textColor} />
           </TouchableOpacity>
         )}
 
         {/* Add/Edit Modal */}
-        <Modal visible={showAddModal} animationType="slide" transparent>
-          <ThemedView style={styles.modalOverlay}>
+        <Modal visible={showAddModal} animationType="slide" transparent onRequestClose={() => setShowAddModal(false)} style={{height: "90%"}}>
+          <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowAddModal(false)} activeOpacity={1}>
             <ThemedView style={styles.modalContent}>
-              <ThemedView style={styles.modalHandle} />
-              <ThemedText style={styles.modalTitle}>
-                {editingCategory ? 'Edit Category' : 'Add Category'}
-              </ThemedText>
-              
-              <TextInput
-                style={styles.input}
-                placeholder="Category Name"
-                value={formData.name}
-                onChangeText={(text) => setFormData({ ...formData, name: text })}
-                placeholderTextColor="#9ca3af"
-              />
-
-              <TextInput
-                style={styles.input}
-                placeholder="Description (optional)"
-                value={formData.description}
-                onChangeText={(text) => setFormData({ ...formData, description: text })}
-                placeholderTextColor="#9ca3af"
-                multiline
-                numberOfLines={3}
-              />
-
-              <ThemedView style={styles.modalActions}>
-                <TouchableOpacity onPress={() => setShowAddModal(false)} style={styles.cancelButton}>
-                  <ThemedText style={styles.cancelText}>Cancel</ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-                  <ThemedText style={styles.submitText}>
-                    {editingCategory ? 'Update' : 'Add'}
+              <TouchableOpacity onPress={() => {}} activeOpacity={1} style={{flex:1}}>
+                <ScrollView style={{flex:1}} showsVerticalScrollIndicator={false}>
+                  <ThemedView style={styles.modalHandle} />
+                  <ThemedText style={styles.modalTitle}>
+                    {editingCategory ? 'Edit Category' : 'Add Category'}
                   </ThemedText>
-                </TouchableOpacity>
-              </ThemedView>
+                  
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Category Name"
+                    value={formData.name}
+                    onChangeText={(text) => setFormData({ ...formData, name: text })}
+                    placeholderTextColor="#9ca3af"
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Description (optional)"
+                    value={formData.description}
+                    onChangeText={(text) => setFormData({ ...formData, description: text })}
+                    placeholderTextColor="#9ca3af"
+                    multiline
+                    numberOfLines={3}
+                  />
+                </ScrollView>
+
+                {editingCategory ? (
+                  <ThemedView style={styles.modalActions}>
+                    <TouchableOpacity onPress={() => handleDelete(editingCategory.id)} style={styles.deleteModalButton}>
+                      <ThemedText style={styles.deleteModalText}>Delete</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setShowAddModal(false)} style={styles.cancelButton}>
+                      <ThemedText style={styles.cancelText}>Cancel</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleSubmit} style={[styles.submitButton, { backgroundColor: color.button.backgroundColor }]}>
+                      <ThemedText style={[styles.submitText, { color: color.button.textColor }]}>
+                        Update
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </ThemedView>
+                ) : (
+                  <ThemedView style={styles.modalActions}>
+                    <TouchableOpacity onPress={() => setShowAddModal(false)} style={styles.cancelButton}>
+                      <ThemedText style={styles.cancelText}>Cancel</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleSubmit} style={[styles.submitButton, { backgroundColor: color.button.backgroundColor }]}>
+                      <ThemedText style={[styles.submitText, { color: color.button.textColor }]}>
+                        Add
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </ThemedView>
+                )}
+              </TouchableOpacity>
             </ThemedView>
-          </ThemedView>
+          </TouchableOpacity>
         </Modal>
       </ThemedView>
     </Container>
@@ -177,10 +200,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    paddingVertical: 16,
   },
   categoryIcon: {
     marginRight: 12,
@@ -220,11 +240,9 @@ const styles = StyleSheet.create({
   addFirstButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: '#1f2937',
     borderRadius: 12,
   },
   addFirstText: {
-    color: '#ffffff',
     fontSize: 16,
   },
   addButton: {
@@ -233,7 +251,6 @@ const styles = StyleSheet.create({
     right: 24,
     width: 56,
     height: 56,
-    backgroundColor: '#1f2937',
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
@@ -249,17 +266,17 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#ffffff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
     paddingTop: 12,
-    maxHeight: '80%',
+    maxHeight: '90%',
+    minHeight: '90%',
   },
   modalHandle: {
     width: 40,
     height: 4,
-    backgroundColor: '#d1d5db',
+    backgroundColor: '#e2e8f0',
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 16,
@@ -268,15 +285,28 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 24,
+    textAlign: 'center',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: '#e2e8f0',
     borderRadius: 12,
-    padding: 16,
+    padding: 10,
     fontSize: 16,
     marginBottom: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
+  },
+  deleteModalButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#ef4444',
+    borderRadius: 12,
+  },
+  deleteModalText: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '500',
   },
   modalActions: {
     flexDirection: 'row',
@@ -284,24 +314,22 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f8fafc',
     borderRadius: 12,
   },
   cancelText: {
     fontSize: 16,
-    color: '#374151',
+    color: '#0f172a',
   },
   submitButton: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#1f2937',
     borderRadius: 12,
   },
   submitText: {
     fontSize: 16,
-    color: '#ffffff',
   },
 });

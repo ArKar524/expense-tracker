@@ -1,11 +1,12 @@
 import Container from '@/components/container';
+import CustomHeader from '@/components/CustomHeader';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import useExpenseStore from '@/store/useExpenseStore';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Alert, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
+import { Alert, FlatList, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 
 export default function NotesScreen() {
   const theme = useColorScheme() ?? 'light';
@@ -76,6 +77,7 @@ export default function NotesScreen() {
 
   return (
     <Container>
+      <CustomHeader title="Notes" />
       <ThemedView style={{}}>
         <FlatList
           data={notes}
@@ -111,9 +113,9 @@ export default function NotesScreen() {
           ListEmptyComponent={
             <ThemedView style={styles.emptyState}>
               <Ionicons name="document-text" size={48} color={color.icon} />
-              <ThemedText style={styles.emptyText}>No notes yet</ThemedText>
-              <TouchableOpacity onPress={openAddModal} style={styles.addFirstButton}>
-                <ThemedText style={styles.addFirstText}>Add First Note</ThemedText>
+              <ThemedText style={[styles.addFirstText, { color: color.button.textColor }]}>Add First Note</ThemedText>
+              <TouchableOpacity onPress={openAddModal} style={[styles.addFirstButton, { backgroundColor: color.button.backgroundColor }]}>
+                <ThemedText style={[styles.addFirstText, { color: color.button.textColor }]}>Add First Note</ThemedText>
               </TouchableOpacity>
             </ThemedView>
           }
@@ -122,51 +124,71 @@ export default function NotesScreen() {
 
         {/* Add/Edit Button */}
         {notes.length > 0 && (
-          <TouchableOpacity onPress={openAddModal} style={styles.addButton}>
-            <Ionicons name="add" size={24} color="#ffffff" />
+          <TouchableOpacity onPress={openAddModal} style={[styles.addButton, { backgroundColor: color.button.backgroundColor }]}>
+            <Ionicons name="add" size={24} color={color.button.textColor} />
           </TouchableOpacity>
         )}
 
         {/* Add/Edit Modal */}
-        <Modal visible={showAddModal} animationType="slide" transparent>
-          <ThemedView style={styles.modalOverlay}>
+        <Modal visible={showAddModal} animationType="slide" transparent onRequestClose={() => setShowAddModal(false)}>
+          <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowAddModal(false)} activeOpacity={1}>
             <ThemedView style={styles.modalContent}>
-              <ThemedView style={styles.modalHandle} />
-              <ThemedText style={styles.modalTitle}>
-                {editingNote ? 'Edit Note' : 'Add Note'}
-              </ThemedText>
-              
-              <TextInput
-                style={styles.input}
-                placeholder="Note Title"
-                value={formData.title}
-                onChangeText={(text) => setFormData({ ...formData, title: text })}
-                placeholderTextColor="#9ca3af"
-              />
-
-              <TextInput
-                style={[styles.input, styles.contentInput]}
-                placeholder="Note Content"
-                value={formData.content}
-                onChangeText={(text) => setFormData({ ...formData, content: text })}
-                placeholderTextColor="#9ca3af"
-                multiline
-                numberOfLines={6}
-                textAlignVertical="top"
-              />
-
-              <ThemedView style={styles.modalActions}>
-                <TouchableOpacity onPress={() => setShowAddModal(false)} style={styles.cancelButton}>
-                  <ThemedText style={styles.cancelText}>Cancel</ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-                  <ThemedText style={styles.submitText}>
-                    {editingNote ? 'Update' : 'Add'}
+              <TouchableOpacity onPress={() => {}} activeOpacity={1} style={{flex:1}}>
+                <ScrollView style={{flex:1}} showsVerticalScrollIndicator={false}>
+                  <ThemedView style={styles.modalHandle} />
+                  <ThemedText style={styles.modalTitle}>
+                    {editingNote ? 'Edit Note' : 'Add Note'}
                   </ThemedText>
-                </TouchableOpacity>
-              </ThemedView>
+                  
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Note Title"
+                    value={formData.title}
+                    onChangeText={(text) => setFormData({ ...formData, title: text })}
+                    placeholderTextColor="#9ca3af"
+                  />
+
+                  <TextInput
+                    style={[styles.input, styles.contentInput]}
+                    placeholder="Note Content"
+                    value={formData.content}
+                    onChangeText={(text) => setFormData({ ...formData, content: text })}
+                    placeholderTextColor="#9ca3af"
+                    multiline
+                    numberOfLines={6}
+                    textAlignVertical="top"
+                  />
+                </ScrollView>
+
+                {editingNote ? (
+                  <ThemedView style={styles.modalActions}>
+                    <TouchableOpacity onPress={() => handleDelete(editingNote.id)} style={styles.deleteModalButton}>
+                      <ThemedText style={styles.deleteModalText}>Delete</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setShowAddModal(false)} style={styles.cancelButton}>
+                      <ThemedText style={styles.cancelText}>Cancel</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleSubmit} style={[styles.submitButton, { backgroundColor: color.button.backgroundColor }]}>
+                      <ThemedText style={[styles.submitText, { color: color.button.textColor }]}>
+                        Update
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </ThemedView>
+                ) : (
+                  <ThemedView style={styles.modalActions}>
+                    <TouchableOpacity onPress={() => setShowAddModal(false)} style={styles.cancelButton}>
+                      <ThemedText style={styles.cancelText}>Cancel</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleSubmit} style={[styles.submitButton, { backgroundColor: color.button.backgroundColor }]}>
+                      <ThemedText style={[styles.submitText, { color: color.button.textColor }]}>
+                        Add
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </ThemedView>
+                )}
+              </TouchableOpacity>
             </ThemedView>
-          </ThemedView>
+          </TouchableOpacity>
         </Modal>
       </ThemedView>
     </Container>
@@ -182,12 +204,16 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   noteItem: {
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   noteHeader: {
     flexDirection: 'row',
@@ -237,11 +263,9 @@ const styles = StyleSheet.create({
   addFirstButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: '#1f2937',
     borderRadius: 12,
   },
   addFirstText: {
-    color: '#ffffff',
     fontSize: 16,
   },
   addButton: {
@@ -250,7 +274,6 @@ const styles = StyleSheet.create({
     right: 24,
     width: 56,
     height: 56,
-    backgroundColor: '#1f2937',
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
@@ -266,17 +289,17 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#ffffff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
     paddingTop: 12,
-    maxHeight: '80%',
+    maxHeight: '90%',
+    minHeight: '90%',
   },
   modalHandle: {
     width: 40,
     height: 4,
-    backgroundColor: '#d1d5db',
+    backgroundColor: '#e2e8f0',
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 16,
@@ -285,15 +308,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 24,
+    textAlign: 'center',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: '#e2e8f0',
     borderRadius: 12,
-    padding: 16,
+    padding: 10,
     fontSize: 16,
     marginBottom: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
   },
   contentInput: {
     height: 120,
@@ -306,22 +330,32 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f8fafc',
     borderRadius: 12,
   },
   cancelText: {
     fontSize: 16,
-    color: '#374151',
+    color: '#0f172a',
   },
   submitButton: {
     flex: 1,
     paddingVertical: 16,
     alignItems: 'center',
-    backgroundColor: '#1f2937',
     borderRadius: 12,
   },
   submitText: {
     fontSize: 16,
+  },
+  deleteModalButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#ef4444',
+    borderRadius: 12,
+  },
+  deleteModalText: {
+    fontSize: 16,
     color: '#ffffff',
+    fontWeight: '500',
   },
 });

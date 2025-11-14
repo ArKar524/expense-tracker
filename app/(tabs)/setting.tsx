@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import Container from "@/components/container";
+import CustomHeader from "@/components/CustomHeader";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
@@ -135,23 +136,7 @@ export default function SettingsScreen() {
   /** ─── UI ─────────────────────────────────────────────────────── */
   return (
     <Container>
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
-        <ThemedText type="title" style={{ fontSize: 26 }}>
-          Settings
-        </ThemedText>
-        <TouchableOpacity onPress={() => router.push("/")}>
-          <Ionicons name="home-outline" size={26} color={color.text} />
-        </TouchableOpacity>
-      </View>
-
+      <CustomHeader title="Settings" />
       {/* Account Section */}
       {user ? (
         <ThemedView
