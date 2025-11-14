@@ -107,7 +107,7 @@ export default function DashboardScreen() {
                   activeOpacity={0.7}
                   onPress={() => handlePress(item.route, scale)}
                 >
-                  <Ionicons name={item.icon} size={22} color={color.icon} />
+                  <Ionicons name={item.icon} size={22} color={"#fff"} />
                   <ThemedText style={styles.navText}>{item.label}</ThemedText>
                 </AnimatedTouchable>
               );
@@ -200,8 +200,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 18,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -209,7 +207,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     marginBottom: 12,
   },
-  navText: { fontSize: 11, marginTop: 6, textAlign: 'center' },
+  navText: { fontSize: 11, marginTop: 6,color:"#fff", textAlign: 'center' },
 
   transactionItem: {
     flexDirection: 'row',
@@ -217,13 +215,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   transactionIcon: { marginRight: 12, borderRadius: 8, padding: 8 },
   incomeBg: { backgroundColor: '#f0fdf4' },
