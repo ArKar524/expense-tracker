@@ -1,228 +1,275 @@
 import Container from '@/components/container';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import useExpenseStore from '@/store/useExpenseStore';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { useMemo } from 'react';
+import { FlatList, StyleSheet, useColorScheme, View } from 'react-native';
 
-export default function HomeScreen() {
+export default function DashboardScreen() {
   const theme = useColorScheme() ?? 'light';
   const color = Colors[theme];
-  const router = useRouter();
 
-  const [type, setType] = useState<'income' | 'expense'>('expense');
-  const [text, setText] = useState<string>('');
+  const transactions = useExpenseStore((state) => state.transactions);
+  const categories = useExpenseStore((state) => state.categories);
+  const accounts = useExpenseStore((state) => state.accounts);
 
-  const expenseStore = useExpenseStore((state) => state.expenseData);
-  const addExpense = useExpenseStore((state) => state.addExpense);
+  const stats = useMemo(() => {
+    const income = transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
 
-  const handleTypeChange = (newType: 'income' | 'expense') => setType(newType);
+    const expense = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
 
-  const handleAddExpense = () => {
-    if (!text.trim()) return;
+    const balance = income - expense;
 
-    const parts = text.trim().split(' ');
-    const amount = parseFloat(parts[0]);
-    if (isNaN(amount)) {
-      alert('Invalid amount!');
-      return;
-    }
-    const description = parts.slice(1).join(' ') || '';
+    return { income, expense, balance };
+  }, [transactions]);
 
-    const newExpense = {
-      id: Math.random().toString(36).substring(2, 15),
-      type,
-      amount,
-      description,
-      date: new Date(),
-    };
+  const recentTransactions = useMemo(() => {
+    return [...transactions]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5);
+  }, [transactions]);
 
-    addExpense(newExpense);
-    setText('');
+  const getCategoryName = (id: number) => {
+    return categories.find(c => c.id === id)?.name || 'Unknown';
   };
 
-  // Compute totals dynamically using useMemo
-  const { totalIncome, totalExpense, balance } = useMemo(() => {
-    const income = expenseStore
-      .filter((e) => e.type === 'income')
-      .reduce((sum, e) => sum + e.amount, 0);
-    const expense = expenseStore
-      .filter((e) => e.type === 'expense')
-      .reduce((sum, e) => sum + e.amount, 0);
-    return {
-      totalIncome: income,
-      totalExpense: expense,
-      balance: income - expense,
-    };
-  }, [expenseStore]);
-
-  const placeholder =
-    type === 'expense' ? 'Quick add expense ...' : 'Quick add income ...';
-
-  const renderItem = ({ item }: { item: typeof expenseStore[0] }) => {
-    const date = new Date(item.date);
-    const formattedDate = date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-
-    return (
-      <TouchableOpacity style={styles.row}   activeOpacity={0.5}>
-        <ThemedView>
-          <ThemedText ellipsizeMode="tail" numberOfLines={1}>{item.description || 'No description'}</ThemedText>
-          <ThemedText style={{ fontSize: 13, fontWeight: "600" , color: '#888' }}>
-            {formattedDate}
-          </ThemedText>
-        </ThemedView>
-        <ThemedText
-          style={{ color: item.type === 'expense' ? 'red' : 'green' }}
-        >
-          ${item.amount.toFixed(2)}
-        </ThemedText>
-      </TouchableOpacity>
-    );
+  const getAccountName = (id: number) => {
+    return accounts.find(a => a.id === id)?.name || 'Unknown';
   };
 
   return (
-    <Container style={{ gap: 16, padding: 16 }}>
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, }}>
-      <ThemedText type="title" style={{ fontSize: 26, lineHeight: 28 }} numberOfLines={1}>Dot Balance</ThemedText>
-      <TouchableOpacity onPress={() => router.push('/setting')}>
-        <Ionicons name="settings-outline" size={26} color={color.text} />
-      </TouchableOpacity>
-    </View>
-
-      {/* Dynamic Balance Card */}
-      <ThemedView style={styles.card}>
-        <ThemedText>CURRENT BALANCE</ThemedText>
-        <ThemedText type="subtitle" style={{ paddingVertical: 5 }}>
-          ${balance.toFixed(2)}
-        </ThemedText>
-
-        <ThemedView style={styles.row}>
-          <View>
-            <ThemedText>Income</ThemedText>
-            <ThemedText style={{ color: 'green' }}>
-              ${totalIncome.toFixed(2)}
-            </ThemedText>
-          </View>
-          <View>
-            <ThemedText>Expenses</ThemedText>
-            <ThemedText style={{ color: 'red' }}>
-              ${totalExpense.toFixed(2)}
-            </ThemedText>
+    <Container>
+      <View style={styles.container}>
+        {/* Balance Cards */}
+        <ThemedView style={styles.balanceCard}>
+          <ThemedText style={styles.balanceLabel}>Total Balance</ThemedText>
+          <ThemedText style={{}}>${stats.balance.toLocaleString()}</ThemedText>
+          <View style={styles.balanceDetails}>
+            <View>
+              <ThemedText style={styles.detailLabel}>Income</ThemedText>
+              <ThemedText style={styles.incomeText}>${stats.income.toLocaleString()}</ThemedText>
+            </View>
+            <View>
+              <ThemedText style={styles.detailLabel}>Expense</ThemedText>
+              <ThemedText style={styles.expenseText}>${stats.expense.toLocaleString()}</ThemedText>
+            </View>
           </View>
         </ThemedView>
-      </ThemedView>
+        {/* Accounts Summary */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Accounts</ThemedText> 
+            <FlatList
+              data={accounts}
+              keyExtractor={(item,index) => index.toString() }
+              renderItem={({ item }) => (
+                <View style={styles.accountItem}>
+                  <View style={styles.accountIcon}>
+                    <Ionicons name="wallet" size={20} color="#3b82f6" />
+                  </View>
+                  <View style={styles.accountInfo}>
+                    <ThemedText style={styles.accountName}>{item.name}</ThemedText>
+                    {item.description && (
+                      <ThemedText style={styles.accountDesc}>{item.description}</ThemedText>
+                    )}
+                  </View>
+                </View>
+              )}
+              horizontal
+            showsHorizontalScrollIndicator={false}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyState}>
+              <Ionicons name="wallet" size={32} color={color.icon} />
+              <ThemedText style={styles.emptyText}>No accounts yet</ThemedText>
+            </View>
+            )}
+            /> 
+        </View>
 
-      {/* Input Section */}
-      <ThemedView
-        style={[
-          styles.inputContainer,
-          { backgroundColor: color.background, overflow: 'hidden', borderRadius: 100 },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() =>
-            handleTypeChange(type === 'expense' ? 'income' : 'expense')
-          }
-          style={styles.toggleButton}
-        >
-          <IconSymbol
-            name={type === 'expense' ? 'chevron.up' : 'chevron.down'}
-            color={type === 'expense' ? 'red' : 'green'}
-          />
-        </TouchableOpacity>
-
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          style={[styles.textInput, { color: color.text }]}
-          placeholder={placeholder}
-          placeholderTextColor={color.text}
-        />
-
-        <TouchableOpacity style={styles.sendButton} onPress={handleAddExpense}>
-          <IconSymbol name="paperplane.fill" color={color.text} size={18} />
-        </TouchableOpacity>
-      </ThemedView>
-
-      {/* Transaction List */}  
-        <FlatList
-          ListHeaderComponent={() => (
-            <ThemedView
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-              paddingBottom: 5,
-                alignItems: 'center',
-              }}
-            >
-            <ThemedText type="subtitle">Recent Transactions</ThemedText>
-            <TouchableOpacity onPress={() => router.push('/transaction')}>
-              <ThemedText type="default" style={{textDecorationLine: "underline"}}>View all fdfa</ThemedText> 
-            </TouchableOpacity>
-            </ThemedView>
-          )}
-          data={expenseStore.slice().reverse().slice(0, 10)}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          ListEmptyComponent={
-            <ThemedText style={{ paddingVertical: 10 }}>
-              No transactions yet
-            </ThemedText>
-          }
-          ItemSeparatorComponent={() => (
-            <ThemedView
-              style={{
-                borderWidth: 1,
-                borderStyle: 'dashed',
-                borderColor: color.text,
-              }}
-            />
-          )}
-           contentContainerStyle={[styles.card,{backgroundColor: color.background}]}
-        />
-     </Container>
+        {/* Recent Transactions */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Recent Transactions</ThemedText> 
+            <FlatList
+              data={recentTransactions}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.transactionItem}>
+                  <View style={[styles.transactionIcon, item.type === 'income' ? styles.incomeBg : styles.expenseBg]}>
+                    {item.type === 'income' ? (
+                      <Ionicons name="trending-up" size={20} color="#10b981" />
+                    ) : (
+                      <Ionicons name="trending-down" size={20} color="#ef4444" />
+                    )}
+                  </View>
+                  <View style={styles.transactionInfo}>
+                    <ThemedText style={styles.transactionCategory}>{getCategoryName(item.category_id)}</ThemedText>
+                    <ThemedText style={styles.transactionAccount}>{getAccountName(item.account_id)}</ThemedText>
+                  </View>
+                  <ThemedText style={[styles.transactionAmount, item.type === 'income' ? styles.incomeText : styles.expenseText]}>
+                    {item.type === 'income' ? '+' : '-'}${item.amount.toLocaleString()}
+                  </ThemedText>
+                </View>
+              )}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyState}>
+              <ThemedText style={styles.emptyText}>No transactions yet</ThemedText>
+            </View>)}
+            /> 
+        </View>
+      </View>
+    </Container>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  container: {
+    // flex: 1,
+    // padding: 16,
+  },
+  balanceCard: {
+    backgroundColor: '#1f2937',
     borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    padding: 24,
     marginBottom: 16,
-   },
-  row: {
+  },
+  balanceLabel: {
+    // color: '#9ca3af',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  balanceAmount: {
+    // color: '#ffffff',
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  balanceDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 5,
   },
-  inputContainer: {
-    borderRadius: 50,
-    marginVertical: 15,
+  detailLabel: {
+    color: '#6b7280',
+    fontSize: 12,
+  },
+  incomeText: {
+    color: '#10b981',
+  },
+  expenseText: {
+    color: '#ef4444',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  incomeCard: {
+    flex: 1,
+    backgroundColor: '#f0fdf4',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#dcfce7',
+  },
+  expenseCard: {
+    flex: 1,
+    backgroundColor: '#fef2f2',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#fee2e2',
+  },
+  cardIcon: {
+    marginBottom: 8,
+  },
+  cardLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  cardAmount: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 48,
+  },
+  emptyText: {
+    marginTop: 8,
+    color: '#6b7280',
+  },
+  accountItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    minWidth: 200,
   },
-  toggleButton: {
-    padding: 10,
+  accountIcon: {
+    marginRight: 12,
   },
-  textInput: {
+  accountInfo: {
     flex: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
   },
-  sendButton: {
-    padding: 10,
+  accountName: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  accountDesc: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  transactionIcon: {
+    marginRight: 12,
+    borderRadius: 8,
+    padding: 8,
+  },
+  incomeBg: {
+    backgroundColor: '#f0fdf4',
+  },
+  expenseBg: {
+    backgroundColor: '#fef2f2',
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionCategory: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  transactionAccount: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

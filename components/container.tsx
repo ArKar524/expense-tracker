@@ -1,7 +1,7 @@
 import React from 'react';
 import { KeyboardAvoidingView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
+import { ThemedView } from './themed-view';
 
 interface ContainerProps {
   children?: React.ReactNode;
@@ -15,12 +15,14 @@ interface ContainerProps {
  */
 export default function Container({ children }: ContainerProps) {
   return (
+    <ThemedView style={styles.content}>
+
     <KeyboardAvoidingView
       behavior="padding"
       style={styles.keyboard}
     >
       {/* Dotted background */}
-      <Svg style={styles.background} height="100%" width="100%">
+      {/* <Svg style={styles.background} height="100%" width="100%">
         <Defs>
           <Pattern
             id="dots"
@@ -32,13 +34,16 @@ export default function Container({ children }: ContainerProps) {
           </Pattern>
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#dots)" />
-      </Svg>
+      </Svg> */}
 
       {/* Main content */}
-      <SafeAreaView edges={['bottom', 'left', 'right','top']} style={styles.content}>
+      <SafeAreaView edges={['bottom', 'left', 'right', 'top']} >
         {children}
+
       </SafeAreaView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+     </ThemedView>
+      
   );
 }
 
